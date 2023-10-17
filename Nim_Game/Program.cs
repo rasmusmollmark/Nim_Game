@@ -1,13 +1,11 @@
 ﻿class program
 {
     /// <summary>
-    /// This property always returns a value &lt; 1.
+    /// Main-metoden.
     /// </summary>
-    ///<returns>description</returns>
-    ///<param name="name">description</param>
     public static void Main(string[] args)
     {
-        greetUser();
+        greetUser(); //Välkomnar användare
         while (true)
         {
             int[] noOfSticksEachRow = { 5, 5, 5 };  //Skapar array för stickorna. 3 rader, 5 stickor i varje.
@@ -101,18 +99,19 @@
     /// </summary>
     private static void askIfGameShouldContinue()
     {
-        while (true)
+        while (true)  //Körs tills användaren matat in korrekt input
         {
             Console.Write("J för spela igen\nN för avsluta\nDitt val: ");
             string input = Console.ReadLine();
-            if(input.Equals("j") || input.Equals("J")){
+            if(input.Equals("j") || input.Equals("J")) //Ifall användaren matar in j så fortsätter programmet
+            { 
                 return;
             }
-            else if(input.Equals("n") || input.Equals("N"))
+            else if(input.Equals("n") || input.Equals("N")) //Ifall användaren matar in n så avslutas programmet
             {
                 Environment.Exit(0);
             }
-            else
+            else //Fel inmat
             {
                 Console.WriteLine("Fel inmat!\n");
             }
@@ -126,10 +125,10 @@
     private static string getPlayersName()
     {
         Console.Write("Skriv in spelare 1:s namn: ");
-        string names = Console.ReadLine().Trim();
+        string names = Console.ReadLine().Trim(); //Hämtar in spelare 1s namn och tar bort all whitespace
         Console.Write("Skriv in spelare 2:s namn: ");
-        names += " "+Console.ReadLine().Trim();
-        return names;
+        names += " "+Console.ReadLine().Trim(); //Hämtar in spelare 2s namn och tar bort all whitespace
+        return names; 
     }
 
     /// <summary>
@@ -139,22 +138,22 @@
     /// <returns> En array med användarens val: rad på plats 0 och antal på plats 1. </returns>
     private static string[] getUserChoice(string whichPlayerIsPlaying)
     {
-        if (whichPlayerIsPlaying[whichPlayerIsPlaying.Length - 1].Equals('s'))
+        if (whichPlayerIsPlaying[whichPlayerIsPlaying.Length - 1].Equals('s')) //Kollar om spelarens namn slutar på 's'
         {
-            Console.WriteLine(whichPlayerIsPlaying + " tur");
+            Console.WriteLine(whichPlayerIsPlaying + " tur"); //Skriver ut vems tur det är utan ett 's'
         }
         else
         {
-            Console.WriteLine(whichPlayerIsPlaying + "s tur");
+            Console.WriteLine(whichPlayerIsPlaying + "s tur"); //Skriver ut vems tur det är med ett 's'
         }
         
         Console.Write("Skriv in vilken rad och hur många stickor du vill plocka enligt \"<rad> <antal>\": ");
-        string[] input = Console.ReadLine().Split();
-        if (int.Parse(input[0]) < 0 && int.Parse(input[0]) > 3) 
+        string[] input = Console.ReadLine().Split(); //Hämtar spelarens input 
+        if (int.Parse(input[0]) < 0 && int.Parse(input[0]) > 3) //Kollar om de skrivit in en rad som inte finns
         {
-            throw new Exception();
+            throw new Exception(); //Kastar en exception om de skrivit in en ickeexisterande rad
         }
-        return input;
+        return input; 
         
     }
 
@@ -164,8 +163,8 @@
     ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
     private static void printSticks(int[] noOfSticksEachRow)
     {
-        Console.WriteLine("\t*****");
-        for(int i = 0; i < noOfSticksEachRow.Length; i++)
+        Console.WriteLine("\t*****"); 
+        for(int i = 0; i < noOfSticksEachRow.Length; i++) //För alla stickor per rad skrivs '|' ut
         {
             Console.Write(i+1+"\t");
             for(int j = 0; j < noOfSticksEachRow[i]; j++)
@@ -233,8 +232,8 @@
     /// <returns> True om inputen är för för stor/liten och false om inputen är korrekt.</returns>
     private static bool isInputTooBigOrSmall(string[] userChoice, int[] noOfSticksEachRow)
     {
-        int tooBigOrSmallNumber = noOfSticksEachRow[int.Parse(userChoice[0]) - 1] - int.Parse(userChoice[1]);
-        if( tooBigOrSmallNumber < 0 || tooBigOrSmallNumber > 5) 
+        int tooBigOrSmallNumber = noOfSticksEachRow[int.Parse(userChoice[0]) - 1] - int.Parse(userChoice[1]); //Lagrar antalet stickor - hur många stickor spelaren tar
+        if ( tooBigOrSmallNumber < 0 || tooBigOrSmallNumber > 5) //Kollar om spelaren skrivit in en för stor eller för liten siffra
         {
             return true;
         }
@@ -252,7 +251,7 @@
     /// <returns>Användarens val i menyn.</returns>
     private static int menu()
     {
-        while (true)
+        while (true) //Loopar tills användaren skrivit in en integer
         {
             try
             {
@@ -263,7 +262,7 @@
                     "Ditt val: ");
                 return int.Parse(Console.ReadLine());
             }
-            catch
+            catch (FormatException) //Om användaren skrivit in annat än integers
             {
                 Console.WriteLine("Felinmat, välj mellan 0, 1 och 2.");
                 continue;
