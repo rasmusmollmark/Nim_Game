@@ -187,6 +187,7 @@ class program
         bool gameOver = false;
         bool playersTurn = false;
         int computerDifficulty = 1;
+        bool firstMove = true;
         computerDifficulty = askUserForComputerDifficulty();
         Console.Write("\nSkriv in siffran 1 om du vill börja, annat för att datorn ska börja: ");
         if (Console.ReadLine().Equals("1"))
@@ -241,18 +242,21 @@ class program
                             playersTurn = true;
                             break;
                         case 3:
+                            generateComputerMoveDif3(noOfSticksEachRow, firstMove);
+                            playersTurn = true;
                             break;
-
                     }
                 }
-               
-
             }
             catch
             {
-
+                Console.WriteLine("\nFelinmat, endast siffror\n");
+                continue;
             }
-
+            if (firstMove)
+            {
+                firstMove = false;
+            }
         }
     }
 
@@ -291,11 +295,25 @@ class program
     ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
     private static void generateComputerMoveDif2(int[] noOfSticksEachRow)
     {
+        if (checkCloseWin(noOfSticksEachRow)) //Om datorn kan vinna denna nuvarande tur
+        {
+            return;
+
+        }
+        else //Om det inte finns en vinst inom nästa tur
+        {
+            generateComputerMoveDif1(noOfSticksEachRow); //Slumpa datorns tur
+        }
+    }
+
+    private static bool checkCloseWin(int[] noOfSticksEachRow)
+    {
         if (checkIfWinInOneMove(noOfSticksEachRow)) //Om datorn kan vinna denna nuvarande tur
         {
-            int rowWithSticksLeft = checkWhichRowHasSticks(noOfSticksEachRow); // Index för rad med pinnar kvar
-            printComputerMove(rowWithSticksLeft+1, noOfSticksEachRow[rowWithSticksLeft]); //Skriver ut datorns val till användare
+            int rowWithSticksLeft = getIndexOfRowContainingSticks(noOfSticksEachRow); // Index för rad med pinnar kvar
+            printComputerMove(rowWithSticksLeft + 1, noOfSticksEachRow[rowWithSticksLeft]); //Skriver ut datorns val till användare
             noOfSticksEachRow[rowWithSticksLeft] = 0; //Tar bort alla pinnar från den raden
+            return true;
 
         }
         else if (checkIfWinInTwoMoves(noOfSticksEachRow)) //Om datorn kan vinna nästa tur
@@ -303,20 +321,19 @@ class program
             if (checkIfTwoRowsHaveOneStickLeft(noOfSticksEachRow)) //Om två rader endast har en pinne kvar
             {
                 int index = getIndexOfRowWithMoreThanOneStick(noOfSticksEachRow); //Index för raden med fler än en pinne
-                printComputerMove(index+1, noOfSticksEachRow[index]); //Skriver ut datorns val till användare
+                printComputerMove(index + 1, noOfSticksEachRow[index]); //Skriver ut datorns val till användare
                 noOfSticksEachRow[index] = 0; //Tar bort alla pinnar från den raden
+                return true;
             }
             else //Om en av raderna har 0, en av raderna har 1 och sista har mer än 1 sticka
             {
                 int index = getIndexOfRowWithMoreThanOneStick(noOfSticksEachRow); //Index för rad med fler än 1 sticka
-                printComputerMove(index, noOfSticksEachRow[index]-1); //Skriver ut datorns val till användare
+                printComputerMove(index, noOfSticksEachRow[index] - 1); //Skriver ut datorns val till användare
                 noOfSticksEachRow[index] = 1; //Tar bort alla förutom 1 sticka från den raden
+                return true;
             }
         }
-        else //Om det inte finns en vinst inom nästa tur
-        {
-            generateComputerMoveDif1(noOfSticksEachRow); //Slumpa datorns tur
-        }
+        return false;
     }
 
     /// <summary>
@@ -417,7 +434,7 @@ class program
     /// </summary>
     ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
     /// <returns> Index för den rad med stickor.</returns>
-    private static int checkWhichRowHasSticks(int[] noOfSticksEachRow)
+    private static int getIndexOfRowContainingSticks(int[] noOfSticksEachRow)
     {
         for (int i = 0; i < noOfSticksEachRow.Length; i++)
         {
@@ -525,5 +542,233 @@ class program
             }
         }
 
+    }
+    private static void generateComputerMoveDif3(int[] noOfSticksEachRow, bool firstMove)
+    {
+        int noOfOneGroups = 0;
+        int noOfTwoGroups = 0;
+        int noOfFourGroups = 0;
+        if(firstMove) //Om det är datorn som börjar
+        {
+            noOfSticksEachRow[0] = 4;
+            printComputerMove(1, 1);
+            return;
+        }
+        for(int i = 0; i < noOfSticksEachRow.Length; i++)
+        {
+            switch (noOfSticksEachRow[i])
+            {
+                case 1:
+                    noOfOneGroups++;
+                    break;
+                case 2:
+                    noOfTwoGroups++;
+                    break;
+                case 3:
+                    noOfOneGroups++;
+                    noOfTwoGroups++;
+                    break;
+                case 4:
+                    noOfFourGroups++;
+                    break;
+                case 5:
+                    noOfFourGroups++;
+                    noOfOneGroups++;
+                    break;
+            }
+        }
+        
+        if(checkCloseWin(noOfSticksEachRow))
+        {
+            return;
+        }
+        
+        if(noOfOneGroups % 2 == 0 && noOfTwoGroups % 2 == 0 && noOfFourGroups % 2 == 0)
+        {
+            int index = getIndexOfRowContainingSticks(noOfSticksEachRow);
+            printComputerMove(index + 1, 1);
+            noOfSticksEachRow[index]--;
+            return;
+        }
+        if (checkIfTwoRowsHaveFiveSticksRemaining(noOfSticksEachRow)) //Om två rader har fem stickor
+        {
+            if (!checkIfLastRowIsEmpty(noOfSticksEachRow)) //Om den sista raden inte är tom -> ta alla stickor
+            {
+                int index = getindexOfNonFullRow(noOfSticksEachRow);
+                printComputerMove(index+1, noOfSticksEachRow[index]); 
+                noOfSticksEachRow[index] = 0;
+                return;
+
+            }
+            else
+            {
+                int index = getIndexOfRowWithMoreThanOneStick(noOfSticksEachRow);
+                printComputerMove(index + 1, 1);
+                noOfSticksEachRow[index]--;
+                return;
+            }
+        }
+        if(noOfOneGroups % 2 != 0 || noOfTwoGroups % 2 != 0 || noOfFourGroups % 2 != 0) 
+        { 
+            if (getRowsThatHaveSameAmountOfSticks(noOfSticksEachRow)  == 2)
+            {
+                int index = getIndexOfNonSimilarRow(noOfSticksEachRow);
+                printComputerMove(index+1, noOfSticksEachRow[index]);
+                noOfSticksEachRow[index] = 0;
+                return;
+            }
+            if (getRowsThatHaveSameAmountOfSticks(noOfSticksEachRow) == 3)
+            {
+                printComputerMove(1, noOfSticksEachRow[0]);
+                noOfSticksEachRow[0] = 0;
+                return;
+            }
+            if(noOfOneGroups % 2 != 0 &&  noOfTwoGroups % 2 == 0 && noOfFourGroups % 2 == 0)
+            {
+                int index = getIndexForUnEvenRow(noOfSticksEachRow);
+                printComputerMove(index + 1, 1);
+                noOfSticksEachRow[index]--;
+                return;
+
+            }
+            if(noOfOneGroups % 2 == 0 && noOfTwoGroups % 2 != 0 && noOfFourGroups % 2 != 0)
+            {
+                int index = getIndexLargestRow(noOfSticksEachRow);
+                printComputerMove(index + 1, 2);
+                noOfSticksEachRow[index] -= 2;
+                return;
+
+            }
+            if (noOfOneGroups % 2 != 0 && noOfTwoGroups % 2 != 0 && noOfFourGroups % 2 != 0)
+            {
+                
+                int index = getIndexForUnEvenRow(noOfSticksEachRow);
+                if (noOfSticksEachRow[index]-2 > getIndexOfRemainingRow(noOfSticksEachRow, index))
+                {
+                    printComputerMove(index + 1, 3);
+                    noOfSticksEachRow[index] -= 3;
+                    return;
+                }
+                printComputerMove(index + 1, 1);
+                noOfSticksEachRow[index]--;
+                return;
+
+            }
+            Console.Write("ERROR");
+        }
+        
+
+
+    }
+
+    private static int getIndexOfRemainingRow(int[] noOfSticksEachRow, int index)
+    {
+        for (int i = 0; i  < noOfSticksEachRow.Length; i++)
+        {
+            if (noOfSticksEachRow[i] != 0 && noOfSticksEachRow[i] != noOfSticksEachRow[index])
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int getIndexLargestRow(int[] noOfSticksEachRow)
+    {
+        int index = 0;
+        for (int i = 1; i < noOfSticksEachRow.Length; i++)
+        {
+            if (noOfSticksEachRow[index] < noOfSticksEachRow[i])
+            {
+                index = i;
+            }
+        }
+        return index;
+    }
+
+    private static int getIndexForUnEvenRow(int[] noOfSticksEachRow)
+    {
+        for (int i = 0; i < noOfSticksEachRow.Length; i++)
+        {
+            if (noOfSticksEachRow[i] % 2 != 0)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int getIndexOfNonSimilarRow(int[] noOfSticksEachRow)
+    {
+        if (noOfSticksEachRow[0]  == noOfSticksEachRow[1])
+        {
+            return 2;
+        }
+        else if (noOfSticksEachRow[0] == noOfSticksEachRow[2])
+        {
+            return 1;
+        }
+        else 
+        { 
+            return 0;
+        }
+    }
+
+    private static int getRowsThatHaveSameAmountOfSticks(int[] noOfSticksEachRow)
+    {
+        if (noOfSticksEachRow[0] == noOfSticksEachRow[1] || noOfSticksEachRow[0] == noOfSticksEachRow[2])
+        {
+            if(noOfSticksEachRow[0] == noOfSticksEachRow[1] && noOfSticksEachRow[0] == noOfSticksEachRow[2])
+            {
+                return 3;
+            }
+            return 2;
+        }
+        if (noOfSticksEachRow[2] == noOfSticksEachRow[1])
+        {
+            return 2;
+        }
+        return 0;
+    }
+
+    private static int getindexOfNonFullRow(int[] noOfSticksEachRow)
+    {
+        for (int i = 0; i < noOfSticksEachRow.Length; ++i)
+        {
+            if (noOfSticksEachRow[i] != 5)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static bool checkIfLastRowIsEmpty(int[] noOfSticksEachRow)
+    {
+        for (int i = 0; i < noOfSticksEachRow.Length; ++i)
+        {
+            if (noOfSticksEachRow[i] == 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool checkIfTwoRowsHaveFiveSticksRemaining(int[] noOfSticksEachRow)
+    {
+        int numberOfFullRows = 0;
+        for(int i = 0; i < noOfSticksEachRow.Length; ++i)
+        {
+            if (noOfSticksEachRow[i] == 5)
+            {
+                numberOfFullRows++;
+            }
+        }
+        if(numberOfFullRows == 2)
+        {
+            return true;
+        }
+        return false;
     }
 }
