@@ -1,4 +1,6 @@
-﻿class program
+﻿using System.Reflection.Metadata.Ecma335;
+
+class program
 {
     /// <summary>
     /// Main-metoden.
@@ -184,7 +186,9 @@
     {
         bool gameOver = false;
         bool playersTurn = false;
-        Console.WriteLine("\nSkriv in siffran 1 om du vill börja, annat för att datorn ska börja: ");
+        int computerDifficulty = 1;
+        computerDifficulty = askUserForComputerDifficulty();
+        Console.Write("\nSkriv in siffran 1 om du vill börja, annat för att datorn ska börja: ");
         if (Console.ReadLine().Equals("1"))
         {
             playersTurn = true;
@@ -194,11 +198,25 @@
             printSticks(noOfSticksEachRow);
             try
             {
+                if (noOfSticksEachRow[0] == 0 && noOfSticksEachRow[1] == 0 && noOfSticksEachRow[2] == 0) //Kollar om alla stickor plockats
+                {
+                    gameOver = true; //Spelet är slut
+                    if(playersTurn)
+                    {
+                        Console.WriteLine("\nDatorn vann spelet!\n");
+                    }
+                    else
+                    {
+                        Console.WriteLine("\nDu vann spelet!\n");
+                    }
+                    askIfGameShouldContinue(); //Fråga användaren om denna vill spela igen eller avsluta programmet
+                    continue;
+                }
                 if (playersTurn)
                 {
                     string[] userChoice = getUserChoice("Spelares");
-                   
-                    
+
+
                     if (isInputTooBigOrSmall(userChoice, noOfSticksEachRow))
                     {
                         Console.WriteLine("Du har tagit för många pinnar eller stoppat in för många pinnar!");
@@ -212,9 +230,22 @@
                 }
                 else
                 {
-                    generateComputerMove(noOfSticksEachRow);
-                    playersTurn= true;
+                    switch (computerDifficulty)
+                    {
+                        case 1:
+                            generateComputerMoveDif1(noOfSticksEachRow);
+                            playersTurn = true;
+                            break;
+                        case 2:
+                            generateComputerMoveDif2(noOfSticksEachRow);
+                            playersTurn = true;
+                            break;
+                        case 3:
+                            break;
+
+                    }
                 }
+               
 
             }
             catch
@@ -223,6 +254,211 @@
             }
 
         }
+    }
+
+    /// <summary>
+    /// Frågar vilken svårighetsgrad användaren önskar spela mot.
+    /// </summary>
+    /// <returns> Användarval för svårighetsgrad (1-3) </returns>
+    private static int askUserForComputerDifficulty()
+    {
+       
+        int input = 0;
+        while (input == 0)
+        {
+            try
+            {
+                Console.Write("Vilken svårighetsgrad vill du att datorn ska spela på?\n" +
+                    "1. Enkel\n2. Medel\n3. Omöjlig\nSkriv in ditt val 1-3: ");
+                input = int.Parse(Console.ReadLine());
+                if(input > 3 || input < 1)
+                {
+                    throw new Exception();
+                }
+                return input;
+            }
+            catch 
+            {
+                Console.WriteLine("Du måste skriva in en siffra 1-3!");
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Metod som skapar datorns val för nivå 2.
+    /// </summary>
+    ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
+    private static void generateComputerMoveDif2(int[] noOfSticksEachRow)
+    {
+        if (checkIfWinInOneMove(noOfSticksEachRow)) //Om datorn kan vinna denna nuvarande tur
+        {
+            int rowWithSticksLeft = checkWhichRowHasSticks(noOfSticksEachRow); // Index för rad med pinnar kvar
+            printComputerMove(rowWithSticksLeft+1, noOfSticksEachRow[rowWithSticksLeft]); //Skriver ut datorns val till användare
+            noOfSticksEachRow[rowWithSticksLeft] = 0; //Tar bort alla pinnar från den raden
+
+        }
+        else if (checkIfWinInTwoMoves(noOfSticksEachRow)) //Om datorn kan vinna nästa tur
+        {
+            if (checkIfTwoRowsHaveOneStickLeft(noOfSticksEachRow)) //Om två rader endast har en pinne kvar
+            {
+                int index = getIndexOfRowWithMoreThanOneStick(noOfSticksEachRow); //Index för raden med fler än en pinne
+                printComputerMove(index+1, noOfSticksEachRow[index]); //Skriver ut datorns val till användare
+                noOfSticksEachRow[index] = 0; //Tar bort alla pinnar från den raden
+            }
+            else //Om en av raderna har 0, en av raderna har 1 och sista har mer än 1 sticka
+            {
+                int index = getIndexOfRowWithMoreThanOneStick(noOfSticksEachRow); //Index för rad med fler än 1 sticka
+                printComputerMove(index, noOfSticksEachRow[index]-1); //Skriver ut datorns val till användare
+                noOfSticksEachRow[index] = 1; //Tar bort alla förutom 1 sticka från den raden
+            }
+        }
+        else //Om det inte finns en vinst inom nästa tur
+        {
+            generateComputerMoveDif1(noOfSticksEachRow); //Slumpa datorns tur
+        }
+    }
+
+    /// <summary>
+    /// Kollar vilken rad som har mer än en sticka kvar.
+    /// </summary>
+    ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
+    /// <returns> Index för den rad med mer än en sticka.</returns>
+    private static int getIndexOfRowWithMoreThanOneStick(int[] noOfSticksEachRow)
+    {
+        for(int i = 0; i < noOfSticksEachRow.Length; i++)
+        {
+            if(noOfSticksEachRow[i] > 1)  //Ifall en rad innehåller mer än en sticka
+            {
+                return i; 
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Kollar om datorn kan vinna nästa tur.
+    /// </summary>
+    ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
+    /// <returns> True om datorn kan vinna på nästa tur, false om den inte kan det.</returns>
+    private static bool checkIfWinInTwoMoves(int[] noOfSticksEachRow)
+    {
+        int noOfRowsWithSticks = noOfRowsLeftWithSticks(noOfSticksEachRow); //Sätter antalet rader som innehåller stickor
+        if(noOfRowsWithSticks == 2) //Ifall endast två rader innehåller stickor
+        {
+            int[] index = getIndexOfNonEmptyRows(noOfSticksEachRow); //Hämta dessa raders index
+            if (noOfSticksEachRow[index[0]] == 1 || noOfSticksEachRow[index[1]] == 1) //Om en av raderna med stickor bara har en sticka kvar
+            {
+                if (noOfSticksEachRow[index[0]] == 1 && noOfSticksEachRow[index[1]] == 1) //Om båda raderna bara har en sticka kvar
+                {
+                    return false;
+                }
+                else //Om bara en av raderna har en sticka kvar
+                {
+                    return true;
+                }
+            }
+
+        }
+        else if(noOfRowsWithSticks == 3) //Om alla rader har stickor
+        {
+            if (checkIfTwoRowsHaveOneStickLeft(noOfSticksEachRow)) //Om 2 rader har en sticka kvar
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Kollar om två rader båda har en sticka kvar.
+    /// </summary>
+    ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
+    /// <returns> True om datorn kan vinna på nästa tur, false om den inte kan det.</returns>
+    private static bool checkIfTwoRowsHaveOneStickLeft(int[] noOfSticksEachRow)
+    {
+        int rowsWithOneStickLeft = 0; //Antalet rader med endast en sticka kvar
+        for(int i = 0; i  < noOfSticksEachRow.Length; i++)
+        {
+            if (noOfSticksEachRow[i] == 1) //Om antalet stickor på raden bara har en sticka kvar
+            {
+                rowsWithOneStickLeft++; //Öka 
+            }
+        }
+        if(rowsWithOneStickLeft == 2) //Om två rader har en sticka kvar
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Kollar vilka index de två raderna med stickor har.
+    /// </summary>
+    ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
+    /// <returns> En array som innehåller två index.</returns>
+    private static int[] getIndexOfNonEmptyRows(int[] noOfSticksEachRow)
+    {
+        int[] index = new int[2];
+        int counter = 0;
+        for (int i = 0; i < noOfSticksEachRow.Length; i++)
+        {
+            if(noOfSticksEachRow[i] != 0) //Om raden inte är tom
+            {
+                index[counter] = i;
+                counter++;
+            }
+        }
+        return index;
+    }
+
+    /// <summary>
+    /// Kollar vilken rad som har stickor kvar (anropas endast när bara en rad har stickor)
+    /// </summary>
+    ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
+    /// <returns> Index för den rad med stickor.</returns>
+    private static int checkWhichRowHasSticks(int[] noOfSticksEachRow)
+    {
+        for (int i = 0; i < noOfSticksEachRow.Length; i++)
+        {
+            if (noOfSticksEachRow[i] != 0) // Om raden inte är tom
+            {
+                return i;
+            }
+        }
+        return -1; 
+    }
+    /// <summary>
+    /// Beräknar antalet rader med stickor kvar
+    /// </summary>
+    ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
+    /// <returns> Antalet rader med stickor kvar.</returns>
+    private static int noOfRowsLeftWithSticks(int[] noOfSticksEachRow)
+    {
+        int numberOfRowsWithSticks = 3; //Integer vars värde beskriver antalet rader som har minst 1 sticka.
+        for (int i = 0; i < noOfSticksEachRow.Length; i++)
+        {
+            if (noOfSticksEachRow[i] == 0) //Om raden är tom
+            {
+                numberOfRowsWithSticks--;
+            }
+        }
+        return numberOfRowsWithSticks;
+    }
+
+    /// <summary>
+    /// Kollar om datorn kan vinna på sin nuvarande tur.
+    /// </summary>
+    ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
+    /// <returns> True om datorn kan vinna på nuvarande tur, false om den inte kan det.</returns>
+    private static bool checkIfWinInOneMove(int[] noOfSticksEachRow)
+    {
+        int numberOfRowsWithSticks = noOfRowsLeftWithSticks(noOfSticksEachRow); // Deklarerar int vars värde beskriver antalet rader som har stickor
+        if (numberOfRowsWithSticks == 1) //Om det bara är en rad kvar 
+        {
+            return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -241,7 +477,7 @@
         return false;
     }
 
-    private static void generateComputerMove(int[] noOfSticksEachRow)
+    private static void generateComputerMoveDif1(int[] noOfSticksEachRow)
     {
         Random random = new Random();
         int heapIndex;
@@ -256,7 +492,12 @@
 
         noOfSticksEachRow[heapIndex] -= sticksToRemove;
 
-        Console.WriteLine("Datorn valde rad " + (heapIndex + 1) + " och tog bort " + sticksToRemove + " stickor.");
+        printComputerMove(heapIndex + 1, sticksToRemove); //Skriver ut datorns val till användare
+    }
+
+    private static void printComputerMove(int row, int sticksToRemove)
+    {
+        Console.WriteLine("Datorn valde rad " + row + " och tog bort " + sticksToRemove + " stickor.");
     }
 
     /// <summary>
