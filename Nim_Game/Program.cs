@@ -213,6 +213,7 @@
                 else
                 {
                     generateComputerMove(noOfSticksEachRow);
+                    playersTurn= true;
                 }
 
             }
@@ -242,7 +243,20 @@
 
     private static void generateComputerMove(int[] noOfSticksEachRow)
     {
-        throw new NotImplementedException();
+        Random random = new Random();
+        int heapIndex;
+        int sticksToRemove;
+
+        do
+        {
+            heapIndex = random.Next(0, 3); // Slumpa en rad (hög)
+            sticksToRemove = random.Next(1, noOfSticksEachRow[heapIndex] + 1); // Slumpa antal stickor
+
+        } while (sticksToRemove > 5 || sticksToRemove > noOfSticksEachRow[heapIndex]);
+
+        noOfSticksEachRow[heapIndex] -= sticksToRemove;
+
+        Console.WriteLine("Datorn valde rad " + (heapIndex + 1) + " och tog bort " + sticksToRemove + " stickor.");
     }
 
     /// <summary>
