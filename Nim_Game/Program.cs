@@ -1,15 +1,17 @@
-﻿using System.Reflection.Metadata.Ecma335;
-
-class program
+﻿class program
 {
     /// <summary>
     /// Main-metoden.
     /// </summary>
     public static void Main(string[] args)
     {
+        Console.BackgroundColor = ConsoleColor.DarkYellow;
+        Console.Clear();
         greetUser(); //Välkomnar användare
+        string[] winStatisticsArray = new string[1]; //Deklarerar array som ska lagra alla tidigare omgångar
         while (true)
         {
+            string newWinnerResult = "";
             int[] noOfSticksEachRow = { 5, 5, 5 };  //Skapar array för stickorna. 3 rader, 5 stickor i varje.
             int userChoice = menu(); //Skriver ut meny samt kollar om användaren vill avsluta, spela mot någon eller mot datorn.
             if (userChoice == 0) //Väljer användaren 0 så avslutas programmet.
@@ -20,24 +22,55 @@ class program
             switch (userChoice) //Kollar vad användaren valt
             {
                 case 1:
-                    playWithComputer(noOfSticksEachRow); //Spela med datorn
+                    newWinnerResult = playWithComputer(noOfSticksEachRow); //Spela med datorn
                     break;
                 case 2:
-                    playTogether(noOfSticksEachRow); //Spela mot varandra
+                    newWinnerResult = playTogether(noOfSticksEachRow); //Spela mot varandra
+                    break;
+                case 3:
+                    printGameResults(winStatisticsArray);
                     break;
                 default:
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("\nMåste vara en siffra 0, 1 eller 2.\n"); //Om användaren skrivit in en int som inte är 0-2. 
                     break;
             }
+            if (!newWinnerResult.Equals(""))
+            {
+                if(winStatisticsArray[0] == null)
+                {
+                    winStatisticsArray = copyArray(winStatisticsArray);
+                }
+                winStatisticsArray[winStatisticsArray.Length - 1] = newWinnerResult;
+            }
         }
+    }
+
+    private static void printGameResults(string[] winStatisticsArray)
+    {
+        for(int i = 0;  i < winStatisticsArray.Length; i++)
+        {
+            Console.WriteLine(winStatisticsArray[i] + "\n");
+        }
+    }
+
+    private static string[] copyArray(string[] winStatisticsArray)
+    {
+        string[] newWinnerStatisticsArray = new string[winStatisticsArray.Length+1];
+        for(int i = 0; i  < winStatisticsArray.Length; i++)
+        {
+            newWinnerStatisticsArray[i] = winStatisticsArray[i];
+        }
+        return newWinnerStatisticsArray;
     }
 
     /// <summary>
     /// Välkomnar användare.
     /// </summary>
-    
+
     private static void greetUser()
     {
+        Console.ForegroundColor = ConsoleColor.Black;
         Console.WriteLine("Hej och välkommen till nimspelet!\n" +
             "Det kommer att finnas tre högar med fem stickor i varje.\n" +
             "En spelares tur går ut på att plocka valfritt antal stickor från \nen hög" +
@@ -47,25 +80,32 @@ class program
             "För att plocka stickor skriver du in \"<rad> <antal stickor>\".\nEx \"1 2\" för att plocka 2 stickor från rad 1. \n"); //Välkomnande
     }
 
+    private static void printErrorMessageTooManySticks()
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("Du har tagit för många pinnar eller stoppat in för många pinnar!");
+    }
+
     /// <summary>
     /// Metoden som sköter flerspelarläget. Här görs de större metodanropen.
     /// </summary>
     ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
-    private static void playTogether(int[] noOfSticksEachRow)
+    private static string playTogether(int[] noOfSticksEachRow)
     {
         string[] playersName = getPlayersName().Split(); //Hämtar spelarnas namn och lagrar i en array, spelare 1 på plats 0, spelare 2 på plats 1.
         string whichPlayerIsPlaying = playersName[0]; //Sätter spelare 1 som startspelare
         bool gameOver = false; //Initierar en bool som ska se om spelet är klart eller om det ska fortsätta
+        bool playerOnesTurn = true;
         while (!gameOver) //Kollar om spelet är klart
         {
             printSticks(noOfSticksEachRow); //Skriver ut "spelplanen"
             
             try
             {
-                string[] userChoice = getUserChoice(whichPlayerIsPlaying); //Hämtar användarens input
+                string[] userChoice = getUserChoice(whichPlayerIsPlaying, playerOnesTurn); //Hämtar användarens input
                 if (isInputTooBigOrSmall(userChoice, noOfSticksEachRow)) //Kollar om input är för stor eller liten
                 {
-                    Console.WriteLine("Du har tagit för många pinnar eller stoppat in för många pinnar!");
+                    printErrorMessageTooManySticks();
                     continue; //Hoppar högst upp i while-loopen
                 }
                 else
@@ -73,27 +113,35 @@ class program
                     noOfSticksEachRow[(int.Parse(userChoice[0]))-1] -= int.Parse(userChoice[1]); //Tar bort stickorna 
                     if (noOfSticksEachRow[0] == 0 && noOfSticksEachRow[1] == 0 && noOfSticksEachRow[2] == 0) //Kollar om alla stickor plockats
                     {
+                        Console.ForegroundColor = ConsoleColor.Black;
                         gameOver = true; //Spelet är slut
-                        Console.WriteLine("\n"+whichPlayerIsPlaying + " vann spelet!\n\n"); //Skriver ut vinnaren
+                        Console.WriteLine("\n"+whichPlayerIsPlaying + " vann spelet!\nTack för ni spelat!\n\n"); //Skriver ut vinnaren
+                        WinStatistics temp = new WinStatistics(false, whichPlayerIsPlaying, playersName);
                         askIfGameShouldContinue(); //Fråga användaren om denna vill spela igen eller avsluta programmet
+                        return temp.getResultToString();
+
                     }
                     if (whichPlayerIsPlaying.Equals(playersName[0])) //Kollar vems tur det varit och sätter nästa tur till den andra spelaren
                     {
                         whichPlayerIsPlaying = playersName[1];
+                        playerOnesTurn = false;
                     }
                     else
                     {
                         whichPlayerIsPlaying = playersName[0];
+                        playerOnesTurn = true;
                     }
                 }
                
             }
             catch 
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Felinmat, endast siffror");
                 continue;
             }
         }
+        return "";
     }
 
     /// <summary>
@@ -103,6 +151,7 @@ class program
     {
         while (true)  //Körs tills användaren matat in korrekt input
         {
+            Console.ForegroundColor = ConsoleColor.Black;
             Console.Write("J för spela igen\nN för avsluta\nDitt val: ");
             string input = Console.ReadLine();
             if(input.Equals("j") || input.Equals("J")) //Ifall användaren matar in j så fortsätter programmet
@@ -115,6 +164,7 @@ class program
             }
             else //Fel inmat
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Fel inmat!\n");
             }
         }
@@ -126,10 +176,15 @@ class program
     /// <returns> En sträng med båda spelares namn. "Spelare 1" + " Spelare 2" </returns>
     private static string getPlayersName()
     {
+        Console.ForegroundColor = ConsoleColor.Black;
         Console.Write("Skriv in spelare 1:s namn: ");
         string names = Console.ReadLine().Trim(); //Hämtar in spelare 1s namn och tar bort all whitespace
-        Console.Write("Skriv in spelare 2:s namn: ");
-        names += " "+Console.ReadLine().Trim(); //Hämtar in spelare 2s namn och tar bort all whitespace
+        Console.Write("Skriv in ");
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Write("spelare 2:s");
+        Console.ForegroundColor = ConsoleColor.Black;
+        Console.Write(" namn: ");
+        names += " " + Console.ReadLine().Trim(); //Hämtar in spelare 2s namn och tar bort all whitespace
         return names; 
     }
 
@@ -138,8 +193,16 @@ class program
     /// </summary>
     /// <param name="whichPlayerIsPlaying">En sträng innehållande en av spelarnas namn.</param>
     /// <returns> En array med användarens val: rad på plats 0 och antal på plats 1. </returns>
-    private static string[] getUserChoice(string whichPlayerIsPlaying)
+    private static string[] getUserChoice(string whichPlayerIsPlaying, bool playerOnesTurn)
     {
+        if(playerOnesTurn)
+        {
+            Console.ForegroundColor = ConsoleColor.Black;
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+        }
         if (whichPlayerIsPlaying[whichPlayerIsPlaying.Length - 1].Equals('s')) //Kollar om spelarens namn slutar på 's'
         {
             Console.WriteLine(whichPlayerIsPlaying + " tur"); //Skriver ut vems tur det är utan ett 's'
@@ -148,7 +211,7 @@ class program
         {
             Console.WriteLine(whichPlayerIsPlaying + "s tur"); //Skriver ut vems tur det är med ett 's'
         }
-        
+        Console.ForegroundColor = ConsoleColor.Black;
         Console.Write("Skriv in vilken rad och hur många stickor du vill plocka enligt \"<rad> <antal>\": ");
         string[] input = Console.ReadLine().Split(); //Hämtar spelarens input 
         if (int.Parse(input[0]) < 0 && int.Parse(input[0]) > 3) //Kollar om de skrivit in en rad som inte finns
@@ -165,8 +228,10 @@ class program
     ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
     private static void printSticks(int[] noOfSticksEachRow)
     {
-        Console.WriteLine("\t*****"); 
-        for(int i = 0; i < noOfSticksEachRow.Length; i++) //För alla stickor per rad skrivs '|' ut
+        Console.ForegroundColor = ConsoleColor.Red; 
+        Console.WriteLine("\t*****");
+        Console.ForegroundColor = ConsoleColor.DarkBlue;
+        for (int i = 0; i < noOfSticksEachRow.Length; i++) //För alla stickor per rad skrivs '|' ut
         {
             Console.Write(i+1+"\t");
             for(int j = 0; j < noOfSticksEachRow[i]; j++)
@@ -175,6 +240,7 @@ class program
             }
             Console.WriteLine();
         }
+        Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("\t*****");
     }
 
@@ -182,13 +248,14 @@ class program
     /// Metoden som sköter datorläget. Här görs de större metodanropen.
     /// </summary>
     ///<param name="noOfSticksEachRow">En array som innehåller antalet stickor per rad.</param>
-    private static void playWithComputer(int[] noOfSticksEachRow)
+    private static string playWithComputer(int[] noOfSticksEachRow)
     {
         bool gameOver = false;
         bool playersTurn = false;
-        int computerDifficulty = 1;
+        int computerDifficulty = askUserForComputerDifficulty();
         bool firstMove = true;
-        computerDifficulty = askUserForComputerDifficulty();
+        string playerName = getSinglePlayerName();
+
         Console.Write("\nSkriv in siffran 1 om du vill börja, annat för att datorn ska börja: ");
         if (Console.ReadLine().Equals("1"))
         {
@@ -204,23 +271,31 @@ class program
                     gameOver = true; //Spelet är slut
                     if(playersTurn)
                     {
-                        Console.WriteLine("\nDatorn vann spelet!\n");
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\nDatorn vann spelet! \nTack för du spelat!\n");
+                        WinStatistics temp = new WinStatistics(true, "Datorn", new string[2] { "Datorn", playerName });
+                        askIfGameShouldContinue(); //Fråga användaren om denna vill spela igen eller avsluta programmet
+                        return temp.getResultToString();
                     }
                     else
                     {
-                        Console.WriteLine("\nDu vann spelet!\n");
+                        Console.ForegroundColor = ConsoleColor.Black;
+                        Console.WriteLine("\nDu vann spelet!\nTack för du spelat!\n");
+                        WinStatistics temp = new WinStatistics(true, playerName, new string[2] {"Datorn", playerName});
+                        askIfGameShouldContinue(); //Fråga användaren om denna vill spela igen eller avsluta programmet
+                        return temp.getResultToString();
+
                     }
-                    askIfGameShouldContinue(); //Fråga användaren om denna vill spela igen eller avsluta programmet
-                    continue;
+                    
                 }
                 if (playersTurn)
                 {
-                    string[] userChoice = getUserChoice("Spelares");
+                    string[] userChoice = getUserChoice(playerName, true);
 
 
                     if (isInputTooBigOrSmall(userChoice, noOfSticksEachRow))
                     {
-                        Console.WriteLine("Du har tagit för många pinnar eller stoppat in för många pinnar!");
+                        printErrorMessageTooManySticks();
                         continue;
                     }
                     else
@@ -250,6 +325,7 @@ class program
             }
             catch
             {
+                Console.ForegroundColor= ConsoleColor.Red;
                 Console.WriteLine("\nFelinmat, endast siffror\n");
                 continue;
             }
@@ -258,6 +334,14 @@ class program
                 firstMove = false;
             }
         }
+        return "";
+    }
+
+    private static string getSinglePlayerName()
+    {
+        Console.ForegroundColor = ConsoleColor.Black;
+        Console.Write("Skriv in ditt namn: ");
+        return Console.ReadLine();
     }
 
     /// <summary>
@@ -272,6 +356,7 @@ class program
         {
             try
             {
+                Console.ForegroundColor = ConsoleColor.Black;
                 Console.Write("Vilken svårighetsgrad vill du att datorn ska spela på?\n" +
                     "1. Enkel\n2. Medel\n3. Omöjlig\nSkriv in ditt val 1-3: ");
                 input = int.Parse(Console.ReadLine());
@@ -283,6 +368,7 @@ class program
             }
             catch 
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Du måste skriva in en siffra 1-3!");
             }
         }
@@ -420,13 +506,18 @@ class program
         int counter = 0;
         for (int i = 0; i < noOfSticksEachRow.Length; i++)
         {
-            if(noOfSticksEachRow[i] != 0) //Om raden inte är tom
+            if(!isRowEmpty(noOfSticksEachRow[i])) //Om raden inte är tom
             {
                 index[counter] = i;
                 counter++;
             }
         }
         return index;
+    }
+
+    private static bool isRowEmpty(int row)
+    {
+        return row == 0;
     }
 
     /// <summary>
@@ -438,7 +529,7 @@ class program
     {
         for (int i = 0; i < noOfSticksEachRow.Length; i++)
         {
-            if (noOfSticksEachRow[i] != 0) // Om raden inte är tom
+            if (!isRowEmpty(noOfSticksEachRow[i])) // Om raden inte är tom
             {
                 return i;
             }
@@ -455,7 +546,7 @@ class program
         int numberOfRowsWithSticks = 3; //Integer vars värde beskriver antalet rader som har minst 1 sticka.
         for (int i = 0; i < noOfSticksEachRow.Length; i++)
         {
-            if (noOfSticksEachRow[i] == 0) //Om raden är tom
+            if (isRowEmpty(noOfSticksEachRow[i])) //Om raden är tom
             {
                 numberOfRowsWithSticks--;
             }
@@ -486,10 +577,13 @@ class program
     /// <returns> True om inputen är för för stor/liten och false om inputen är korrekt.</returns>
     private static bool isInputTooBigOrSmall(string[] userChoice, int[] noOfSticksEachRow)
     {
-        int tooBigOrSmallNumber = noOfSticksEachRow[int.Parse(userChoice[0]) - 1] - int.Parse(userChoice[1]); //Lagrar antalet stickor - hur många stickor spelaren tar
-        if ( tooBigOrSmallNumber < 0 || tooBigOrSmallNumber > 5) //Kollar om spelaren skrivit in en för stor eller för liten siffra
+        if (int.Parse(userChoice[1]) > 0)
         {
-            return true;
+            int tooBigOrSmallNumber = noOfSticksEachRow[int.Parse(userChoice[0]) - 1] - int.Parse(userChoice[1]); //Lagrar antalet stickor - hur många stickor spelaren tar
+            if (tooBigOrSmallNumber < 0 || tooBigOrSmallNumber > 5) //Kollar om spelaren skrivit in en för stor eller för liten siffra
+            {
+                return true;
+            }
         }
         return false;
     }
@@ -514,6 +608,7 @@ class program
 
     private static void printComputerMove(int row, int sticksToRemove)
     {
+        Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("Datorn valde rad " + row + " och tog bort " + sticksToRemove + " stickor.");
     }
 
@@ -527,16 +622,19 @@ class program
         {
             try
             {
+                Console.ForegroundColor = ConsoleColor.Black;
                 Console.Write("\nVälj om du vill spela med:\n" +
                     "1. Datorn\n" +
                     "2. Två spelare\n" +
+                    "3. För att se tidigare resultat\n" +
                     "0. För att avsluta\n" +
                     "Ditt val: ");
                 return int.Parse(Console.ReadLine());
             }
             catch (FormatException) //Om användaren skrivit in annat än integers
             {
-                Console.WriteLine("Felinmat, välj mellan 0, 1 och 2.");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Felinmat, välj mellan 0, 1, 2 och 3.");
                 continue;
 
             }
@@ -770,5 +868,25 @@ class program
             return true;
         }
         return false;
+    }
+}
+public class WinStatistics
+{
+    private static int globalGameNumber = 0;
+    private int localGameNumber = 0;
+    private string[] playerNames = new string[2];
+    private string winner = "";
+
+    public WinStatistics(bool playerVSComputer, string winner, string[] playerNames)
+    {
+        globalGameNumber++;
+        localGameNumber = globalGameNumber;
+        this.playerNames = playerNames;
+        this.winner = winner;
+    }
+    public string getResultToString()
+    {
+        string result = "Spelomgång " + localGameNumber + " spelades mellan "+ playerNames[0] +" och " + playerNames[1] + ". Vinnaren var " + winner + "!";
+        return result;
     }
 }
